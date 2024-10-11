@@ -1,4 +1,5 @@
 def tag, dockerUser, containerName, httpPort = ""
+def registryUrl = "azurewebappregistry.azurecr.io"
 node(){
     stage('Prepare Environment'){
         echo 'Initialize Environment'
@@ -26,14 +27,14 @@ node(){
 	
     stage('Docker Image Build'){
         echo 'Creating Docker image'
-        sh "docker build -t $dockerUser/$containerName:$tag --pull --no-cache ."
+        sh "docker build -t $registryUrl/$containerName:$tag --pull --no-cache ."
     }  
 
     stage('Publishing Image to ACR'){
         echo 'Pushing the docker image to ACR'
         withCredentials([usernamePassword(credentialsId: 'dockerACRAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
-		sh "docker login -u $dockerUser -p $dockerPassword"
-		sh "docker push $dockerUser/$containerName:$tag"
+		sh "docker login -u $dockerUser -p $dockerPassword $registryUrl"
+		sh "docker push $registryUrl/$containerName:$tag"
 		echo "Image push complete"
         } 
     }
