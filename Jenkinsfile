@@ -3,7 +3,7 @@ def registryUrl = "azurewebappregistry.azurecr.io"
 node(){
     stage('Prepare Environment'){
         echo 'Initialize Environment'
-        tag="1.0"
+        tag="latest"
 	containerName="backendapp"
 	httpPort="8989"
     }
