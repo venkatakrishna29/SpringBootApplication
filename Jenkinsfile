@@ -4,9 +4,6 @@ node(){
     stage('Prepare Environment'){
         echo 'Initialize Environment'
         tag="1.0"
-	withCredentials([usernamePassword(credentialsId: 'dockerACRAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
-		dockerUser="$dockerUser"
-        }
 	containerName="backendapp"
 	httpPort="8989"
     }
