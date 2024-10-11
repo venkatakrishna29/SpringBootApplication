@@ -1,4 +1,4 @@
-def tag, dockerUser, containerName, httpPort = ""
+def tag, containerName, httpPort = ""
 def registryUrl = "azurewebappregistry.azurecr.io"
 node(){
     stage('Prepare Environment'){
