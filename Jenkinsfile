@@ -1,10 +1,10 @@
-def tag, dockerHubUser, containerName, httpPort = ""
+def tag, dockerUser, containerName, httpPort = ""
 node(){
     stage('Prepare Environment'){
         echo 'Initialize Environment'
         tag="1.0"
-	withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
-		dockerHubUser="$dockerUser"
+	withCredentials([usernamePassword(credentialsId: 'dockerACRAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+		dockerUser="$dockerUser"
         }
 	containerName="backendapp"
 	httpPort="8989"
@@ -26,12 +26,12 @@ node(){
 	
     stage('Docker Image Build'){
         echo 'Creating Docker image'
-        sh "docker build -t $dockerHubUser/$containerName:$tag --pull --no-cache ."
+        sh "docker build -t $dockerUser/$containerName:$tag --pull --no-cache ."
     }  
 
-    stage('Publishing Image to DockerHub'){
-        echo 'Pushing the docker image to DockerHub'
-        withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+    stage('Publishing Image to ACR'){
+        echo 'Pushing the docker image to ACR'
+        withCredentials([usernamePassword(credentialsId: 'dockerACRAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
 		sh "docker login -u $dockerUser -p $dockerPassword"
 		sh "docker push $dockerUser/$containerName:$tag"
 		echo "Image push complete"
