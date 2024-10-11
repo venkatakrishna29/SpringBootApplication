@@ -1,43 +1,40 @@
-def containerName="springbootdocker"
-def tag="latest"
-def dockerHubUser="anujsharma1990"
-def gitURL="https://github.com/anujdevopslearn/SpringBootDocker.git"
-
-node {
-	def sonarscanner = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-    stage('Checkout') {
-        checkout changelog: false, poll: false, scm: [$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: gitURL]]]
+def tag, dockerHubUser, containerName, httpPort = ""
+node(){
+    stage('Prepare Environment'){
+        echo 'Initialize Environment'
+        tag="1.0"
+	withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+		dockerHubUser="$dockerUser"
+        }
+	containerName="backendapp"
+	httpPort="8989"
     }
-
-    stage('Build'){
-        sh "mvn clean install"
-    }
-
-    stage("Image Prune"){
-         sh "docker image prune -f"
-    }
-
-    stage('Image Build'){
-        sh "docker build -t $containerName:$tag --pull --no-cache ."
-        echo "Image build complete"
-    }
-
-    stage('Push to Docker Registry'){
-        withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
-            sh "docker login -u $dockerUser -p $dockerPassword"
-            sh "docker tag $containerName:$tag $dockerUser/$containerName:$tag"
-            sh "docker push $dockerUser/$containerName:$tag"
-            echo "Image push complete"
+    
+    stage('Code Checkout'){
+        try{
+            checkout scm
+        }
+        catch(Exception e){
+            echo 'Exception occured in Git Code Checkout Stage'
+            currentBuild.result = "FAILURE"
         }
     }
 	
-	stage("SonarQube Scan"){
-        withSonarQubeEnv(credentialsId: 'SonarQubeToken') {
-			sh "${sonarscanner}/bin/sonar-scanner"
-		}
+    stage('Maven Build'){
+        sh "mvn clean package"        
     }
 	
-	stage("Ansible Deploy"){
-        ansiblePlaybook inventory: 'hosts', playbook: 'deploy.yaml'
+    stage('Docker Image Build'){
+        echo 'Creating Docker image'
+        sh "docker build -t $dockerHubUser/$containerName:$tag --pull --no-cache ."
+    }  
+
+    stage('Publishing Image to DockerHub'){
+        echo 'Pushing the docker image to DockerHub'
+        withCredentials([usernamePassword(credentialsId: 'dockerHubAccount', usernameVariable: 'dockerUser', passwordVariable: 'dockerPassword')]) {
+		sh "docker login -u $dockerUser -p $dockerPassword"
+		sh "docker push $dockerUser/$containerName:$tag"
+		echo "Image push complete"
+        } 
     }
 }
